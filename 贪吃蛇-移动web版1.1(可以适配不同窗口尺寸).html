@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+    <title>1</title>
+    <style>
+        html {
+            height: 100%;
+        }
+
+        body {
+            position: relative;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #333;
+        }
+
+        .box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #FCFBB5;
+        }
+
+        .zhu {
+            height: 10px;
+            width: 10px;
+            position: absolute;
+            background-color: springgreen;
+            border-radius: 40%;
+            left: 100px;
+            top: 100px;
+        }
+
+        .dan {
+            height: 10px;
+            width: 10px;
+            position: absolute;
+            background-color: blueviolet;
+            border-radius: 40%;
+        }
+
+        .over {
+            height: 100%;
+            width: 100%;
+            background-color: #fff;
+            position: absolute;
+            top: 0;
+            left: 0;
+            text-align: center;
+            font: 500 20px/30px "微软雅黑";
+            display: none;
+        }
+
+        .over .text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+        }
+    </style>
+</head>
+
+<body>
+<div class="box">
+    <div id="cho">
+    </div>
+    <div class="dan"></div>
+    <div class="over">
+        <div class="text">
+            <p>game over</p>
+            <p></p>
+            <p></p>
+            <p></p>
+            <p></p>
+            <input type="button" value="重新开始">
+        </div>
+    </div>
+</div>
+<script>
+    Game();
+    function Game() {
+        var _this = this;
+        //得到屏幕宽高
+        var body = document.querySelector('body');
+        _this.bodyW = body.offsetWidth;
+        _this.bodyH = body.offsetHeight;
+
+
+        //计算出每个点的直径
+        _this.d = _this.bodyW > _this.bodyH ? Math.floor(_this.bodyH / 15) : Math.floor(_this.bodyW / 15);
+        //给游戏容器设置宽高
+        var box = document.querySelector('.box');
+        box.style.width = (Math.floor(_this.bodyW / _this.d) - 1) * _this.d + 'px';
+        box.style.height = (Math.floor(_this.bodyH / _this.d) - 1) * _this.d + 'px';
+        //cho放蛇的盒子
+        _this.box = document.querySelector('#cho');
+        //给dan蛋设置大小
+        var dan = document.querySelector('.dan');
+        dan.style.height = _this.d + 'px';
+        dan.style.width = _this.d + 'px';
+        //x,y记录蛇头坐标
+        _this.x = 10 * _this.d;
+        _this.y = 10 * _this.d;
+        //xx，yy记录蛋坐标
+        _this.xx = 0;
+        _this.yy = 0;
+        //cont记录进行方向
+        _this.cont = -1;
+        //t计时器
+        _this.t = null;
+        //立一个flag，如果游戏结束，就变为false
+        _this.flag = true;
+        //记录游戏得分
+        _this.f = 0;
+
+        //suiji函数，生成一个位置随机的蛋
+        _this.suiji = function() {
+            _this.xx = parseInt(Math.random() * box.offsetWidth / _this.d) * _this.d;
+            _this.yy = parseInt(Math.random() * box.offsetHeight / _this.d) * _this.d;
+            //得到蛇身体每个点的元素，for循环遍历，如果蛋的位置和蛇身体的点重叠，则调用自己重新生成一个蛋
+            var sh = document.getElementsByClassName('zhu');
+            for (var i = 1; i < sh.length; i++) {
+                if (_this.xx === parseInt(sh[i].style.left) && _this.yy === parseInt(sh[i].style.top)) {
+                    _this.suiji();
+                    return;
+                }
+            }
+            dan.style.top = _this.yy + 'px';
+            dan.style.left = _this.xx + 'px';
+        }
+        _this.start = function() {
+            //重置一些变量
+            _this.cont = -1;
+            _this.flag = true;
+            _this.f = 0;
+            _this.x = 10 * _this.d;
+            _this.y = 10 * _this.d;
+            //初始蛇的长度，坐标，大小
+            _this.box.innerHTML = '<div class="zhu"></div> <div class="zhu"></div> <div class="zhu"></div>';
+            _this.sh = document.getElementsByClassName('zhu');
+            for (var i = 0; i < _this.sh.length; i++) {
+                _this.sh[i].style.left = (_this.x - i * _this.d) + 'px';
+                _this.sh[i].style.top = _this.y + 'px';
+                _this.sh[i].style.height = _this.d + 'px';
+                _this.sh[i].style.width = _this.d + 'px';
+            }
+            //隐藏结束提示的盒子
+            var gover = document.getElementsByClassName('over')[0];
+            gover.style.display = 'none';
+            //调用suiji函数，一开始就生成一个蛋
+            _this.suiji();
+        }
+
+        _this.start();
+
+
+        //contro函数，控制蛇行进，每次移动10像素
+         _this.tcontro = function() {
+            if (_this.flag) {
+                //先获取蛇身体每个点，遍历循环，如果蛇头坐标和身体重合，调用over函数，游戏结束
+                var sh = document.getElementsByClassName('zhu');
+                for (var i = 1; i < sh.length; i++) {
+                    if (i > 3 && _this.x === parseInt(sh[i].style.left) && _this.y === parseInt(sh[i].style.top)) {
+                        _this.over();
+                        return;
+                    }
+                }
+                //蛇身移动：
+                // 按照进行方向在原来蛇头坐标上移动d像素，得到新的蛇头坐标
+                if (_this.cont === 0) {
+                    if (_this.y > 0) {
+                        _this.y -= _this.d;
+                    } else {
+                        _this.y = box.offsetHeight - _this.d;
+                    }
+                } else if (_this.cont === 1) {
+                    if (_this.x < box.offsetWidth - _this.d) {
+                        _this.x += _this.d;
+                    } else {
+                        _this.x = 0;
+                    }
+                } else if (_this.cont === 2) {
+                    if (_this.y < box.offsetHeight - _this.d) {
+                        _this.y += _this.d;
+                    } else {
+                        _this.y = 0;
+                    }
+                } else {
+                    if (_this.x > 0) {
+                        _this.x -= _this.d;
+                    } else {
+                        _this.x = box.offsetWidth - _this.d;
+                    }
+                }
+                //获取到蛇身最后一个点，把他揪下来放到蛇头那个点的前面，坐标为刚才算出来的新坐标，倒数第二个点就成了最后一个了
+                var zhu = _this.box.lastElementChild;
+                zhu.style.top = _this.y + 'px';
+                zhu.style.left = _this.x + 'px';
+                var wei = _this.box.firstElementChild;
+                _this.box.insertBefore(zhu, wei);
+                //判断移动后的蛇头坐标是否和蛋的坐标重合，如果重合，调用long函数让蛇变长，再调用suiji函数让蛋的位置重新随机
+                if (_this.x === _this.xx && _this.y === _this.yy) {
+                    _this.f++;
+                    _this.long();
+                    _this.suiji();
+                }
+            }
+        }
+
+        //获取键盘按下事件，根据键值更改记录行进方向的cont值
+        document.onkeydown = function (e) {
+            console.log(e.keyCode)
+            if (_this.flag && (e.keyCode == 87 || e.keyCode == 68 || e.keyCode == 83 || e.keyCode == 65)) {
+                if ((e.keyCode == 87||e.keyCode==38) && _this.cont !== 2) {
+                    _this.cont = 0;
+                }
+                if ((e.keyCode == 68||e.keyCode==39) && _this.cont !== 3) {
+                    _this.cont = 1;
+                }
+                if ((e.keyCode == 83||e.keyCode==40) && _this.cont !== 0) {
+                    _this.cont = 2;
+                }
+                if ((e.keyCode == 65||e.keyCode==37) && _this.cont !== 1) {
+                    _this.cont = 3;
+                }
+                //用计时函数每隔一定时间调用contro函数让蛇移动10像素，先清除上一次按键触发的计时
+                clearInterval(_this.t);
+                _this.tcontro();
+                _this.t = setInterval(function () {
+                    _this.tcontro();
+                }, 150); // 100控制蛇的速度，越大，蛇越慢
+            }
+        }
+        //触摸滑动事件
+        var touchStartX = 0;
+        var touchStartY = 0;
+        window.addEventListener('touchstart', function (e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+        window.addEventListener('touchend', function (e) {
+            var touchEndX = e.changedTouches[0].clientX;
+            var touchEndY = e.changedTouches[0].clientY;
+            var moveX = touchEndX - touchStartX;
+            var moveY = touchEndY - touchStartY;
+            if (_this.flag && (moveX !== 0 || moveY !== 0)) {
+                var move = Math.abs(moveX) > Math.abs(moveY) ? moveX : moveY;
+                if (Math.abs(moveX) < Math.abs(moveY) && moveY < 0 && _this.cont !== 2) {
+                    _this.cont = 0;
+                }
+                if (Math.abs(moveX) >= Math.abs(moveY) && moveX > 0 && _this.cont !== 3) {
+                    _this.cont = 1;
+                }
+                if (Math.abs(moveX) < Math.abs(moveY) && moveY > 0 && _this.cont !== 0) {
+                    _this.cont = 2;
+                }
+                if (Math.abs(moveX) >= Math.abs(moveY) && moveX < 0 && _this.cont !== 1) {
+                    _this.cont = 3;
+                }
+                //用计时函数每隔一定时间调用contro函数让蛇移动10像素，先清除上一次按键触发的计时
+                clearInterval(_this.t);
+                _this.tcontro();
+                _this.t = setInterval(function () {
+                    _this.tcontro();
+                }, 150); // 100控制蛇的速度，越大，蛇越慢
+            }
+        })
+        //long函数，让蛇变长，把蛇身最后一个点克隆一下，放在盒子最后，位置和最后一个点重合，暂时看不到
+        //下次移动的时候，会把克隆出来的点挪到最前面
+         _this.long = function() {
+            var zhi = _this.box.lastElementChild;
+            var zhizhi = zhi.cloneNode(true);
+            _this.box.appendChild(zhizhi);
+            _this.tcontro();
+        }
+//        over();
+        //over函数，游戏结束，停止计时器，让结束提示的盒子显示出来
+         _this.over = function() {
+            _this.flag = false;
+            _this.cont = -1;
+            clearInterval(_this.t);
+            var gover = document.getElementsByClassName('over')[0];
+            var json = [];
+            for (var i = 0; i < 3; i++) {
+                json[i] = (typeof (window.localStorage.getItem(i)) !== 'string' ? 0 : window.localStorage.getItem(i));
+            }
+            for (var i = 0; i < 3; i++) {
+                gover.querySelector('.text p:nth-child(5)').innerHTML = '本次得分：' + _this.f + '分,未进入历史排名';
+                if (_this.f >= json[i]) {
+                    for (var j = 2; j > i; j--) {
+                        json[j] = json[j - 1];
+                    }
+                    json[i] = _this.f;
+                    gover.querySelector('.text p:nth-child(5)').innerHTML = '本次得分：' + json[i] + '分,历史排名第' + (i + 1);
+                    break;
+                }
+            }
+            for (var n = 0; n < 3; n++) {
+                window.localStorage.setItem(n, json[n]);
+            }
+            setTimeout(function () {
+                gover.querySelector('.text p:nth-child(2)').innerHTML = '第一名：' + json[0] + '分';
+                gover.querySelector('.text p:nth-child(3)').innerHTML = '第二名：' + json[1] + '分';
+                gover.querySelector('.text p:nth-child(4)').innerHTML = '第三名：' + json[2] + '分';
+                gover.style.display = 'block';
+            }, 500)
+        }
+
+        //绑定重新开始点击事件
+        document.querySelector('.text input').addEventListener('click', function (e) {
+            _this.start();
+            e.stopPropagation();
+        });
+    }
+</script>
+</body>
+</html>
