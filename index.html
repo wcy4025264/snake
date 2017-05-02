@@ -124,7 +124,7 @@
             _this.yy = parseInt(Math.random() * box.offsetHeight / _this.d) * _this.d;
             //得到蛇身体每个点的元素，for循环遍历，如果蛋的位置和蛇身体的点重叠，则调用自己重新生成一个蛋
             var sh = document.getElementsByClassName('zhu');
-            for (var i = 1; i < sh.length; i++) {
+            for (var i = 0; i < sh.length; i++) {
                 if (_this.xx === parseInt(sh[i].style.left) && _this.yy === parseInt(sh[i].style.top)) {
                     _this.suiji();
                     return;
